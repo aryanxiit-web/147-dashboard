@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>1-4-7 Revision Dashboard</title>
+<style>
+  :root{
+    --bg:#0a0a0f;
+    --bg2:#0e0e15;
+    --card:#15151f;
+    --card2:#1a1a26;
+    --border:#26262f;
+    --text:#eaeaf0;
+    --muted:#8b8b98;
+    --muted2:#5f5f6b;
+    --physics:#22d3ee;
+    --physics-dim:rgba(34,211,238,0.12);
+    --chemistry:#f5a623;
+    --chemistry-dim:rgba(245,166,35,0.12);
+    --maths:#e879f9;
+    --maths-dim:rgba(232,121,249,0.12);
+    --danger:#f87171;
+    --danger-dim:rgba(248,113,113,0.12);
+    --success:#34d399;
+    --success-dim:rgba(52,211,153,0.12);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{padding-bottom:90px;}
+  #app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--bg);
+    border-left:1px solid var(--border);border-right:1px solid var(--border);}
+
+  /* Header */
+  header{padding:18px 16px 12px;border-bottom:1px solid var(--border);
+    position:sticky;top:0;background:var(--bg);z-index:20;}
+  .h-top{display:flex;align-items:center;justify-content:space-between;}
+  .h-title{font-size:19px;font-weight:700;letter-spacing:-0.02em;}
+  .h-title .num{background:linear-gradient(90deg,var(--physics),var(--maths));
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .info-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);
+    background:var(--card);color:var(--muted);display:flex;align-items:center;
+    justify-content:center;font-size:13px;cursor:pointer;font-weight:600;}
+  .stats-row{display:flex;gap:8px;margin-top:12px;}
+  .stat-pill{flex:1;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;padding:8px 10px;text-align:center;}
+  .stat-pill .n{font-size:17px;font-weight:700;line-height:1.1;}
+  .stat-pill .l{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.03em;}
+
+  .info-panel{margin-top:10px;background:var(--card2);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.55;display:none;}
+  .info-panel.show{display:block;}
+  .info-panel b{color:var(--text);}
+
+  /* Tabs */
+  nav.tabs{display:flex;position:sticky;top:0;z-index:19;background:var(--bg);
+    border-bottom:1px solid var(--border);}
+  nav.tabs button{flex:1;padding:12px 4px;background:none;border:none;color:var(--muted);
+    font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;
+    font-family:inherit;}
+  nav.tabs button.active{color:var(--text);border-bottom:2px solid var(--physics);}
+
+  main{padding:14px 16px 20px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:12px 13px;margin-bottom:10px;}
+  .empty{text-align:center;color:var(--muted2);padding:34px 10px;font-size:13.5px;line-height:1.6;}
+  .empty .emoji{font-size:26px;display:block;margin-bottom:8px;}
+
+  .section-label{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
+    color:var(--muted);font-weight:700;margin:18px 0 8px;}
+  .section-label:first-child{margin-top:0;}
+
+  /* Due item card */
+  .due-card{display:flex;align-items:flex-start;gap:10px;}
+  .subj-dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+  .due-body{flex:1;min-width:0;}
+  .due-chapter{font-size:14px;font-weight:700;line-height:1.3;}
+  .due-sub{font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .due-meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:6px;letter-spacing:0.02em;}
+  .badge.day4{background:var(--physics-dim);color:var(--physics);}
+  .badge.day7{background:var(--maths-dim);color:var(--maths);}
+  .badge.overdue{background:var(--danger-dim);color:var(--danger);}
+  .badge.today{background:var(--success-dim);color:var(--success);}
+  .mark-btn{margin-top:8px;background:var(--card2);border:1px solid var(--border);
+    color:var(--text);font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;
+    cursor:pointer;font-family:inherit;}
+  .mark-btn:active{background:var(--success-dim);border-color:var(--success);color:var(--success);}
+
+  /* Subject tabs (Add view) */
+  .subj-tabs{display:flex;gap:8px;margin-bottom:12px;}
+  .subj-tab{flex:1;padding:9px 4px;text-align:center;border-radius:9px;font-size:12.5px;
+    font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);
+    color:var(--muted);}
+  .subj-tab.active[data-s="Physics"]{background:var(--physics-dim);border-color:var(--physics);color:var(--physics);}
+  .subj-tab.active[data-s="Chemistry"]{background:var(--chemistry-dim);border-color:var(--chemistry);color:var(--chemistry);}
+  .subj-tab.active[data-s="Maths"]{background:var(--maths-dim);border-color:var(--maths);color:var(--maths);}
+
+  .chip-wrap{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{padding:8px 12px;border-radius:9px;font-size:13px;border:1px solid var(--border);
+    background:var(--card);cursor:pointer;color:var(--text);font-family:inherit;}
+  .chip:active{opacity:0.7;}
+
+  .add-custom-row{display:flex;gap:8px;margin-bottom:12px;}
+  .add-custom-row input{flex:1;background:var(--card);border:1px solid var(--border);
+    color:var(--text);border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;}
+  .add-custom-row button{background:var(--card2);border:1px solid var(--border);color:var(--text);
+    border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;
+    display:flex;align-items:flex-end;justify-content:center;}
+  .modal-overlay.hidden{display:none;}
+  .modal{width:100%;max-width:640px;background:var(--card2);border-top:1px solid var(--border);
+    border-radius:16px 16px 0 0;padding:20px 18px 24px;}
+  .modal .m-subj{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px;}
+  .modal .m-chapter{font-size:17px;font-weight:700;margin-bottom:14px;}
+  .modal label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;}
+  .modal input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);
+    border-radius:9px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:14px;}
+  .modal-btns{display:flex;gap:10px;}
+  .modal-btns button{flex:1;padding:12px;border-radius:9px;font-size:14px;font-weight:700;
+    border:1px solid var(--border);cursor:pointer;font-family:inherit;}
+  .btn-cancel{background:var(--card);color:var(--muted);}
+  .btn-start{background:var(--physics);color:#03181c;border-color:var(--physics);}
+
+  /* Calendar */
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .cal-header .cal-title{font-size:15px;font-weight:700;}
+  .cal-nav{display:flex;gap:6px;}
+  .cal-nav button{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+    background:var(--card);color:var(--text);font-size:14px;cursor:pointer;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-dow{text-align:center;font-size:10px;color:var(--muted2);font-weight:700;padding-bottom:4px;}
+  .cal-cell{aspect-ratio:1;border-radius:8px;border:1px solid var(--border);background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
+    cursor:pointer;font-size:12px;color:var(--muted);}
+  .cal-cell.blank{border:none;background:none;cursor:default;}
+  .cal-cell.today{border-color:var(--physics);color:var(--text);font-weight:700;}
+  .cal-cell.selected{background:var(--card2);border-color:var(--text);}
+  .cal-dots{display:flex;gap:2px;position:absolute;bottom:4px;}
+  .cal-dot{width:4px;height:4px;border-radius:50%;}
+  .cal-more{font-size:8px;color:var(--muted2);position:absolute;bottom:3px;}
+
+  .agenda-title{font-size:12.5px;color:var(--muted);font-weight:600;margin:16px 0 8px;}
+
+  /* Log */
+  .filter-row{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+  .filter-chip{padding:6px 11px;border-radius:20px;font-size:12px;font-weight:600;
+    border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;}
+  .filter-chip.active{background:var(--card2);color:var(--text);border-color:var(--text);}
+
+  .log-card{padding-left:11px;position:relative;}
+  .log-card::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:3px;}
+  .log-card.Physics::before{background:var(--physics);}
+  .log-card.Chemistry::before{background:var(--chemistry);}
+  .log-card.Maths::before{background:var(--maths);}
+  .log-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .log-chapter{font-size:14px;font-weight:700;}
+  .log-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+  .del-btn{background:none;border:none;color:var(--muted2);font-size:16px;cursor:pointer;padding:2px 4px;}
+  .milestones{display:flex;gap:6px;margin-top:9px;}
+  .milestone{flex:1;border-radius:8px;padding:6px 4px;text-align:center;background:var(--bg2);
+    border:1px solid var(--border);}
+  .milestone .m-label{font-size:9px;color:var(--muted2);font-weight:700;text-transform:uppercase;}
+  .milestone .m-date{font-size:11px;margin-top:2px;color:var(--muted);}
+  .milestone.done{border-color:var(--success);background:var(--success-dim);}
+  .milestone.done .m-date{color:var(--success);}
+  .milestone.overdue{border-color:var(--danger);background:var(--danger-dim);}
+  .milestone.overdue .m-date{color:var(--danger);}
+  .milestone.duetoday{border-color:var(--physics);background:var(--physics-dim);}
+  .milestone.duetoday .m-date{color:var(--physics);}
+
+  /* Data / Sync view */
+  .sync-card{padding:15px;}
+  .sync-status{display:flex;align-items:center;gap:10px;}
+  .sync-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .sync-dot.on{background:var(--success);box-shadow:0 0 0 3px var(--success-dim);}
+  .sync-dot.off{background:var(--muted2);}
+  .sync-title{font-size:13.5px;font-weight:700;}
+  .sync-file{font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all;}
+  .data-btn{width:100%;text-align:left;background:var(--card2);border:1px solid var(--border);
+    color:var(--text);border-radius:10px;padding:12px 13px;font-size:13.5px;font-weight:600;
+    cursor:pointer;font-family:inherit;margin-top:10px;display:flex;align-items:center;gap:10px;}
+  .data-btn .ico{font-size:16px;}
+  .data-btn.primary{background:var(--physics-dim);border-color:var(--physics);color:var(--physics);}
+  .data-btn.danger{background:var(--danger-dim);border-color:var(--danger);color:var(--danger);}
+  .data-btn small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:2px;}
+  .note-box{font-size:12px;color:var(--muted);line-height:1.55;margin-top:14px;}
+  #importFileInput{display:none;}
+
+  /* Toast */
+  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--card2);border:1px solid var(--border);color:var(--text);padding:11px 18px;
+    border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:all 0.25s ease;
+    z-index:60;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.4);white-space:nowrap;
+    max-width:90%;overflow:hidden;text-overflow:ellipsis;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="h-top">
+      <div class="h-title"><span class="num">1-4-7</span> Revision</div>
+      <div class="info-btn" onclick="toggleInfo()">?</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-pill"><div class="n" id="statActive">0</div><div class="l">Active</div></div>
+      <div class="stat-pill"><div class="n" id="statDue">0</div><div class="l">Due Today</div></div>
+      <div class="stat-pill"><div class="n" id="statDone">0</div><div class="l">Completed</div></div>
+    </div>
+    <div class="info-panel" id="infoPanel">
+      <b>How it works:</b> Studied a chapter today? Tap it under <b>Start</b> to log Day 1.
+      Claude — I mean this dashboard — will show it under <b>Today</b> again on Day 4 and Day 7 for revision.
+      You can start the <b>same chapter multiple times</b> — e.g. Binomial Theorem today for
+      Multinomial Theorem, and again tomorrow for General Term — each runs as its own independent 1-4-7 cycle.
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-tab="today" onclick="switchTab('today')">Today</button>
+    <button data-tab="add" onclick="switchTab('add')">Start</button>
+    <button data-tab="calendar" onclick="switchTab('calendar')">Calendar</button>
+    <button data-tab="log" onclick="switchTab('log')">Log</button>
+    <button data-tab="data" onclick="switchTab('data')">Data</button>
+  </nav>
+
+  <main>
+    <section id="view-today" class="view active"></section>
+    <section id="view-add" class="view"></section>
+    <section id="view-calendar" class="view"></section>
+    <section id="view-log" class="view"></section>
+    <section id="view-data" class="view"></section>
+  </main>
+</div>
+
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <div class="m-subj" id="modalSubj"></div>
+    <div class="m-chapter" id="modalChapter"></div>
+    <label>Subtopic / what you studied (optional)</label>
+    <input type="text" id="modalSubtopic" placeholder="e.g. General Term, Multinomial Theorem...">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-start" onclick="confirmStart()">Start · Day 1 Today</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFileInput" accept="application/json,.json" onchange="handleImportFile(event)">
+<div id="toast"></div>
+
+<script>
+/* ---------------- Data ---------------- */
+const DEFAULT_CHAPTERS = {
+  Physics: ["Units & Dimensions","Maths in Physics","Motion 1D","Motion 2D","Laws of Motion",
+    "Work Power Energy","COM & Collision","Rotational Motion","Atomic Physics","Dual Nature",
+    "Nuclear Physics","KTG","Thermal Properties","Thermodynamics","Mech. Prop. of Fluids",
+    "Mech. Prop. of Solids","Oscillations","Electrostatics","Gravitation","Capacitance",
+    "Current Electricity","Magnetic Effects of Current","Magnetic Prop. of Matter","EM Induction",
+    "Alternating Current","Wave Optics","Ray Optics","Waves & Sound","EM Waves","Semiconductors"],
+  Chemistry: ["Some Basic Concepts","Structure of Atom","Solutions","Electrochemistry",
+    "Chemical Kinetics","Chemical Equilibrium","Ionic Equilibrium","Redox Reactions",
+    "Thermodynamics (C)","Periodicity","Chemical Bonding","IUPAC Nomenclature","GOC","Isomerism",
+    "Hydrocarbons","Haloalkanes & Haloarenes","Alcohols Phenols Ethers","Aldehydes & Ketones",
+    "Carboxylic Acid Derivatives","Amines","Biomolecules","Coordination Compounds","d & f Block",
+    "p Block","Practical Chemistry"],
+  Maths: ["Basic of Maths","Quadratic Eq.","Sequences & Series","Trig. Functions",
+    "Trigonometric Equations","PnC","Binomial Theorem","Straight Lines","Circle","Parabola",
+    "Ellipse","Hyperbola","Matrices","Determinants","Sets & Relations","Functions",
+    "Inverse Trigonometry","Limits Continuity & Diff.","Application of Derivatives",
+    "Indefinite Integration","Definite Integration","Area Under Curves","Differential Equations",
+    "3D Geometry","Vector Algebra","Complex Number","Probability","Statistics"]
+};
+const SUBJECTS = ["Physics","Chemistry","Maths"];
+const SUBJ_COLOR = {Physics:"var(--physics)",Chemistry:"var(--chemistry)",Maths:"var(--maths)"};
+
+/* ---------------- Date helpers (local, no UTC drift) ---------------- */
+function pad(n){return n<10?'0'+n:''+n;}
+function toISO(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function todayISO(){return toISO(new Date());}
+function parseISO(iso){const p=iso.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function addDays(iso,n){const d=parseISO(iso);d.setDate(d.getDate()+n);return toISO(d);}
+function daysDiff(a,b){return Math.round((parseISO(b)-parseISO(a))/86400000);}
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW=['S','M','T','W','T','F','S'];
+function formatDisplay(iso){const d=parseISO(iso);return d.getDate()+' '+MONTH_NAMES[d.getMonth()].slice(0,3);}
+
+/* ---------------- Storage ---------------- */
+function loadCycles(){try{return JSON.parse(localStorage.getItem('jee147_cycles'))||[];}catch(e){return [];}}
+function saveCycles(c){localStorage.setItem('jee147_cycles',JSON.stringify(c));}
+function loadCustom(){try{return JSON.parse(localStorage.getItem('jee147_custom'))||{Physics:[],Chemistry:[],Maths:[]};}catch(e){return {Physics:[],Chemistry:[],Maths:[]};}}
+function saveCustom(c){localStorage.setItem('jee147_custom',JSON.stringify(c));}
+
+let cycles = loadCycles();
+let customChapters = loadCustom();
+
+function allChapters(subject){
+  return DEFAULT_CHAPTERS[subject].concat(customChapters[subject]||[]);
+}
+
+/* ---------------- Cycle actions ---------------- */
+function startCycle(subject, chapter, subtopic){
+  const day1 = todayISO();
+  const cycle = {
+    id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    subject: subject,
+    chapter: chapter,
+    subtopic: subtopic && subtopic.trim() ? subtopic.trim() : "",
+    day1: day1,
+    day4: addDays(day1,3),
+    day7: addDays(day1,6),
+    day4Done: false,
+    day7Done: false,
+    createdAt: Date.now()
+  };
+  cycles.push(cycle);
+  saveCycles(cycles); syncWrite();
+  renderAll();
+  showToast('Started: '+chapter+(cycle.subtopic?' — '+cycle.subtopic:'')+' (Day 1 today)');
+}
+
+function markDone(id, milestone){
+  const c = cycles.find(x=>x.id===id);
+  if(!c) return;
+  if(milestone==='day4') c.day4Done = true;
+  if(milestone==='day7') c.day7Done = true;
+  saveCycles(cycles); syncWrite();
+  renderAll();
+  showToast('Marked reviewed ✓');
+}
+
+function deleteCycle(id){
+  if(!confirm('Delete this revision cycle? This cannot be undone.')) return;
+  cycles = cycles.filter(x=>x.id!==id);
+  saveCycles(cycles); syncWrite();
+  renderAll();
+}
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- Tabs ---------------- */
+function switchTab(name){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(name==='calendar') renderCalendar();
+}
+
+function toggleInfo(){
+  document.getElementById('infoPanel').classList.toggle('show');
+}
+
+/* ---------------- Modal ---------------- */
+let pendingStart = null;
+function openModal(subject, chapter){
+  pendingStart = {subject, chapter};
+  document.getElementById('modalSubj').textContent = subject.toUpperCase();
+  document.getElementById('modalSubj').style.color = SUBJ_COLOR[subject];
+  document.getElementById('modalChapter').textContent = chapter;
+  document.getElementById('modalSubtopic').value = '';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('modalSubtopic').focus(), 100);
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.add('hidden');
+  pendingStart = null;
+}
+function confirmStart(){
+  if(!pendingStart) return;
+  const subtopic = document.getElementById('modalSubtopic').value;
+  startCycle(pendingStart.subject, pendingStart.chapter, subtopic);
+  closeModal();
+}
+
+/* ---------------- Render: Today ---------------- */
+function milestoneStatus(dateISO, done){
+  const today = todayISO();
+  if(done) return 'done';
+  if(dateISO < today) return 'overdue';
+  if(dateISO === today) return 'today';
+  return 'future';
+}
+
+function renderToday(){
+  const el = document.getElementById('view-today');
+  const today = todayISO();
+  const dueItems = [];
+  cycles.forEach(c=>{
+    if(!c.day4Done){
+      const st = milestoneStatus(c.day4, c.day4Done);
+      if(st==='today'||st==='overdue') dueItems.push({cycle:c, milestone:'day4', date:c.day4, status:st});
+    }
+    if(!c.day7Done){
+      const st = milestoneStatus(c.day7, c.day7Done);
+      if(st==='today'||st==='overdue') dueItems.push({cycle:c, milestone:'day7', date:c.day7, status:st});
+    }
+  });
+  dueItems.sort((a,b)=> a.status===b.status ? (a.date<b.date?-1:1) : (a.status==='overdue'?-1:1));
+
+  const startedToday = cycles.filter(c=>c.day1===today);
+
+  let html = '';
+  html += '<div class="section-label">Due Now ('+dueItems.length+')</div>';
+  if(dueItems.length===0){
+    html += '<div class="card empty"><span class="emoji">🎉</span>Nothing due right now.<br>Go log something new under Start.</div>';
+  } else {
+    dueItems.forEach(item=>{
+      const c = item.cycle;
+      const overdueBy = item.status==='overdue' ? daysDiff(item.date, today) : 0;
+      html += '<div class="card due-card">';
+      html += '<div class="subj-dot" style="background:'+SUBJ_COLOR[c.subject]+'"></div>';
+      html += '<div class="due-body">';
+      html += '<div class="due-chapter">'+esc(c.chapter)+'</div>';
+      if(c.subtopic) html += '<div class="due-sub">'+esc(c.subtopic)+'</div>';
+      html += '<div class="due-meta">';
+      html += '<span class="badge '+(item.milestone==='day4'?'day4':'day7')+'">'+(item.milestone==='day4'?'DAY 4':'DAY 7')+'</span>';
+      if(item.status==='overdue'){
+        html += '<span class="badge overdue">OVERDUE '+overdueBy+'d</span>';
+      } else {
+        html += '<span class="badge today">DUE TODAY</span>';
+      }
+      html += '</div>';
+      html += '<button class="mark-btn" onclick="markDone(\''+c.id+'\',\''+item.milestone+'\')">Mark Reviewed</button>';
+      html += '</div></div>';
+    });
+  }
+
+  html += '<div class="section-label">Started Today ('+startedToday.length+')</div>';
+  if(startedToday.length===0){
+    html += '<div class="card empty"><span class="emoji">📖</span>No new chapters logged today yet.</div>';
+  } else {
+    startedToday.forEach(c=>{
+      html += '<div class="card due-card">';
+      html += '<div class="subj-dot" style="background:'+SUBJ_COLOR[c.subject]+'"></div>';
+      html += '<div class="due-body">';
+      html += '<div class="due-chapter">'+esc(c.chapter)+'</div>';
+      if(c.subtopic) html += '<div class="due-sub">'+esc(c.subtopic)+'</div>';
+      html += '<div class="due-meta"><span class="badge today">DAY 1 · TODAY</span></div>';
+      html += '</div></div>';
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+/* ---------------- Render: Add ---------------- */
+let addSubject = 'Physics';
+function renderAdd(){
+  const el = document.getElementById('view-add');
+  let html = '<div class="subj-tabs">';
+  SUBJECTS.forEach(s=>{
+    html += '<div class="subj-tab'+(s===addSubject?' active':'')+'" data-s="'+s+'" onclick="setAddSubject(\''+s+'\')">'+s+'</div>';
+  });
+  html += '</div>';
+  html += '<div class="add-custom-row"><input type="text" id="customChapterInput" placeholder="Add a chapter not listed..."><button onclick="addCustomChapter()">Add</button></div>';
+  html += '<div class="chip-wrap">';
+  allChapters(addSubject).forEach(ch=>{
+    html += '<div class="chip" onclick="openModal(\''+addSubject+'\',\''+escAttr(ch)+'\')">'+esc(ch)+'</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+function setAddSubject(s){ addSubject = s; renderAdd(); }
+function addCustomChapter(){
+  const input = document.getElementById('customChapterInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(!customChapters[addSubject]) customChapters[addSubject]=[];
+  customChapters[addSubject].push(val);
+  saveCustom(customChapters); syncWrite();
+  renderAdd();
+}
+
+/* ---------------- Render: Calendar ---------------- */
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let selectedDate = todayISO();
+
+function cyclesOnDate(dateISO){
+  const items = [];
+  cycles.forEach(c=>{
+    if(c.day4===dateISO) items.push({cycle:c, milestone:'day4'});
+    if(c.day7===dateISO) items.push({cycle:c, milestone:'day7'});
+  });
+  return items;
+}
+
+function renderCalendar(){
+  const el = document.getElementById('view-calendar');
+  const firstOfMonth = new Date(calYear, calMonth, 1);
+  const startWeekday = firstOfMonth.getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const today = todayISO();
+
+  let html = '<div class="cal-header"><div class="cal-title">'+MONTH_NAMES[calMonth]+' '+calYear+'</div>';
+  html += '<div class="cal-nav"><button onclick="calPrev()">‹</button><button onclick="calNext()">›</button></div></div>';
+  html += '<div class="cal-grid">';
+  DOW.forEach(d=> html += '<div class="cal-dow">'+d+'</div>');
+
+  for(let i=0;i<startWeekday;i++) html += '<div class="cal-cell blank"></div>';
+
+  for(let day=1; day<=daysInMonth; day++){
+    const dateISO = calYear+'-'+pad(calMonth+1)+'-'+pad(day);
+    const items = cyclesOnDate(dateISO);
+    let cls = 'cal-cell';
+    if(dateISO===today) cls += ' today';
+    if(dateISO===selectedDate) cls += ' selected';
+    html += '<div class="'+cls+'" onclick="selectDate(\''+dateISO+'\')">';
+    html += day;
+    if(items.length>0){
+      html += '<div class="cal-dots">';
+      items.slice(0,3).forEach(it=>{
+        html += '<div class="cal-dot" style="background:'+SUBJ_COLOR[it.cycle.subject]+'"></div>';
+      });
+      html += '</div>';
+      if(items.length>3) html += '<div class="cal-more">+'+(items.length-3)+'</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  const agendaItems = cyclesOnDate(selectedDate);
+  html += '<div class="agenda-title">'+formatDisplay(selectedDate)+(selectedDate===today?' (Today)':'')+' — '+agendaItems.length+' to revise</div>';
+  if(agendaItems.length===0){
+    html += '<div class="card empty"><span class="emoji">📅</span>Nothing scheduled this day.</div>';
+  } else {
+    agendaItems.forEach(it=>{
+      const c = it.cycle;
+      const done = it.milestone==='day4' ? c.day4Done : c.day7Done;
+      html += '<div class="card due-card">';
+      html += '<div class="subj-dot" style="background:'+SUBJ_COLOR[c.subject]+'"></div>';
+      html += '<div class="due-body">';
+      html += '<div class="due-chapter">'+esc(c.chapter)+'</div>';
+      if(c.subtopic) html += '<div class="due-sub">'+esc(c.subtopic)+'</div>';
+      html += '<div class="due-meta"><span class="badge '+(it.milestone==='day4'?'day4':'day7')+'">'+(it.milestone==='day4'?'DAY 4':'DAY 7')+'</span>';
+      if(done) html += '<span class="badge today">DONE ✓</span>';
+      html += '</div>';
+      if(!done && selectedDate<=today){
+        html += '<button class="mark-btn" onclick="markDone(\''+c.id+'\',\''+it.milestone+'\')">Mark Reviewed</button>';
+      }
+      html += '</div></div>';
+    });
+  }
+
+  el.innerHTML = html;
+}
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11; calYear--;} renderCalendar(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0; calYear++;} renderCalendar(); }
+function selectDate(iso){ selectedDate = iso; renderCalendar(); }
+
+/* ---------------- Render: Log ---------------- */
+let logSubjFilter = 'All';
+let logStatusFilter = 'All';
+function renderLog(){
+  const el = document.getElementById('view-log');
+  let html = '<div class="filter-row">';
+  ['All','Physics','Chemistry','Maths'].forEach(s=>{
+    html += '<div class="filter-chip'+(logSubjFilter===s?' active':'')+'" onclick="setLogSubj(\''+s+'\')">'+s+'</div>';
+  });
+  html += '</div><div class="filter-row">';
+  ['All','Active','Completed'].forEach(s=>{
+    html += '<div class="filter-chip'+(logStatusFilter===s?' active':'')+'" onclick="setLogStatus(\''+s+'\')">'+s+'</div>';
+  });
+  html += '</div>';
+
+  let list = cycles.slice().sort((a,b)=> b.createdAt - a.createdAt);
+  if(logSubjFilter!=='All') list = list.filter(c=>c.subject===logSubjFilter);
+  if(logStatusFilter==='Active') list = list.filter(c=>!c.day7Done);
+  if(logStatusFilter==='Completed') list = list.filter(c=>c.day7Done);
+
+  if(list.length===0){
+    html += '<div class="card empty"><span class="emoji">🗂️</span>No cycles match this filter.</div>';
+  } else {
+    const today = todayISO();
+    list.forEach(c=>{
+      html += '<div class="card log-card '+c.subject+'">';
+      html += '<div class="log-top"><div><div class="log-chapter">'+esc(c.chapter)+'</div>';
+      if(c.subtopic) html += '<div class="log-sub">'+esc(c.subtopic)+'</div>';
+      html += '</div><button class="del-btn" onclick="deleteCycle(\''+c.id+'\')">✕</button></div>';
+      html += '<div class="milestones">';
+
+      html += '<div class="milestone done"><div class="m-label">Day 1</div><div class="m-date">'+formatDisplay(c.day1)+'</div></div>';
+
+      let d4cls = 'milestone';
+      if(c.day4Done) d4cls += ' done'; else if(c.day4<today) d4cls += ' overdue'; else if(c.day4===today) d4cls += ' duetoday';
+      html += '<div class="'+d4cls+'"><div class="m-label">Day 4</div><div class="m-date">'+formatDisplay(c.day4)+(c.day4Done?' ✓':'')+'</div></div>';
+
+      let d7cls = 'milestone';
+      if(c.day7Done) d7cls += ' done'; else if(c.day7<today) d7cls += ' overdue'; else if(c.day7===today) d7cls += ' duetoday';
+      html += '<div class="'+d7cls+'"><div class="m-label">Day 7</div><div class="m-date">'+formatDisplay(c.day7)+(c.day7Done?' ✓':'')+'</div></div>';
+
+      html += '</div></div>';
+    });
+  }
+
+  el.innerHTML = html;
+}
+function setLogSubj(s){ logSubjFilter = s; renderLog(); }
+function setLogStatus(s){ logStatusFilter = s; renderLog(); }
+
+/* ---------------- Stats ---------------- */
+function renderStats(){
+  const active = cycles.filter(c=>!c.day7Done).length;
+  const today = todayISO();
+  let due = 0;
+  cycles.forEach(c=>{
+    if(!c.day4Done && c.day4<=today) due++;
+    if(!c.day7Done && c.day7<=today) due++;
+  });
+  const done = cycles.filter(c=>c.day7Done).length;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statDue').textContent = due;
+  document.getElementById('statDone').textContent = done;
+}
+
+/* ---------------- File Sync ---------------- */
+const FSA_SUPPORTED = typeof window.showSaveFilePicker === 'function';
+let syncHandle = null;      // FileSystemFileHandle currently linked
+let syncFileName = null;    // display name
+let syncPermGranted = false;
+
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open('jee147db',1);
+    req.onupgradeneeded = ()=> req.result.createObjectStore('kv');
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbSet(key,val){
+  const db = await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('kv','readwrite');
+    tx.objectStore('kv').put(val,key);
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = ()=>reject(tx.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('kv','readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function idbDel(key){
+  const db = await idbOpen();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction('kv','readwrite');
+    tx.objectStore('kv').delete(key);
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = ()=>reject(tx.error);
+  });
+}
+
+function currentDataBlob(){
+  return JSON.stringify({cycles: cycles, customChapters: customChapters, exportedAt: new Date().toISOString()}, null, 2);
+}
+
+async function chooseSyncFile(mode){
+  // mode: 'new' creates/overwrites a file, 'existing' opens one to link+load
+  if(!FSA_SUPPORTED){ showToast('Your browser doesn\'t support direct file linking'); return; }
+  try{
+    let handle;
+    if(mode==='existing'){
+      const [h] = await window.showOpenFilePicker({types:[{description:'JSON', accept:{'application/json':['.json']}}]});
+      handle = h;
+    } else {
+      handle = await window.showSaveFilePicker({
+        suggestedName: '147-dashboard-data.json',
+        types:[{description:'JSON', accept:{'application/json':['.json']}}]
+      });
+    }
+    syncHandle = handle;
+    syncFileName = handle.name;
+    syncPermGranted = true;
+    await idbSet('syncFileHandle', handle);
+
+    if(mode==='existing'){
+      await syncRead();
+    } else {
+      await syncWrite();
+    }
+    renderData();
+    showToast('Linked to '+handle.name);
+  }catch(e){
+    if(e.name !== 'AbortError') showToast('Could not link file');
+  }
+}
+
+async function syncRead(){
+  if(!syncHandle) return;
+  try{
+    const file = await syncHandle.getFile();
+    const text = await file.text();
+    if(!text.trim()) return;
+    const data = JSON.parse(text);
+    if(Array.isArray(data.cycles)){
+      cycles = data.cycles;
+      saveCycles(cycles);
+    }
+    if(data.customChapters){
+      customChapters = data.customChapters;
+      saveCustom(customChapters);
+    }
+    renderAll();
+  }catch(e){ /* unreadable or empty file, ignore */ }
+}
+
+async function syncWrite(){
+  if(!syncHandle || !syncPermGranted) return;
+  try{
+    const writable = await syncHandle.createWritable();
+    await writable.write(currentDataBlob());
+    await writable.close();
+  }catch(e){ /* permission may have lapsed; user can reconnect from Data tab */ }
+}
+
+async function tryRestoreSyncHandle(){
+  if(!FSA_SUPPORTED) return;
+  try{
+    const handle = await idbGet('syncFileHandle');
+    if(!handle) return;
+    syncHandle = handle;
+    syncFileName = handle.name;
+    const perm = await handle.queryPermission({mode:'readwrite'});
+    syncPermGranted = (perm === 'granted');
+    renderData();
+  }catch(e){ /* ignore */ }
+}
+
+async function reconnectSyncFile(){
+  if(!syncHandle) return;
+  try{
+    const perm = await syncHandle.requestPermission({mode:'readwrite'});
+    syncPermGranted = (perm === 'granted');
+    if(syncPermGranted){ await syncRead(); showToast('Reconnected to '+syncFileName); }
+    renderData();
+  }catch(e){ showToast('Could not reconnect'); }
+}
+
+async function unlinkSyncFile(){
+  syncHandle = null; syncFileName = null; syncPermGranted = false;
+  await idbDel('syncFileHandle');
+  renderData();
+  showToast('File unlinked');
+}
+
+function exportBackup(){
+  const blob = new Blob([currentDataBlob()], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = todayISO();
+  a.href = url; a.download = '147-dashboard-backup-'+stamp+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded');
+}
+
+function triggerImport(){
+  document.getElementById('importFileInput').click();
+}
+function handleImportFile(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data.cycles)) throw new Error('bad file');
+      if(!confirm('Replace current data with this backup? ('+data.cycles.length+' cycles found)')) return;
+      cycles = data.cycles;
+      saveCycles(cycles);
+      if(data.customChapters){ customChapters = data.customChapters; saveCustom(customChapters); }
+      renderAll();
+      showToast('Backup restored');
+    }catch(e){ showToast('Invalid backup file'); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+function renderData(){
+  const el = document.getElementById('view-data');
+  let html = '';
+
+  html += '<div class="section-label">Local File Sync</div>';
+  html += '<div class="card sync-card">';
+  if(syncHandle){
+    html += '<div class="sync-status"><div class="sync-dot '+(syncPermGranted?'on':'off')+'"></div><div>';
+    html += '<div class="sync-title">'+(syncPermGranted?'Synced':'Reconnect needed')+'</div>';
+    html += '<div class="sync-file">'+esc(syncFileName)+'</div></div></div>';
+    if(!syncPermGranted){
+      html += '<button class="data-btn primary" onclick="reconnectSyncFile()"><span class="ico">🔗</span>Reconnect to file</button>';
+    }
+    html += '<button class="data-btn" onclick="syncWrite().then(()=>showToast(\'Saved to file\'))"><span class="ico">💾</span>Save now</button>';
+    html += '<button class="data-btn danger" onclick="unlinkSyncFile()"><span class="ico">✕</span>Unlink file</button>';
+  } else {
+    html += '<div class="sync-status"><div class="sync-dot off"></div><div>';
+    html += '<div class="sync-title">Not linked</div>';
+    html += '<div class="sync-file">Data is only saved in this browser right now</div></div></div>';
+    if(FSA_SUPPORTED){
+      html += '<button class="data-btn primary" onclick="chooseSyncFile(\'new\')"><span class="ico">📄</span>Create a new sync file<small>Pick a folder — a JSON file is created there and kept up to date automatically</small></button>';
+      html += '<button class="data-btn" onclick="chooseSyncFile(\'existing\')"><span class="ico">📂</span>Link an existing sync file<small>Choose a .json file you\'ve exported before</small></button>';
+    } else {
+      html += '<div class="note-box">This browser doesn\'t support linking directly to a file (common inside wrapped/APK apps). Use Export and Import below instead — export a backup, then import it on any device.</div>';
+    }
+  }
+  html += '</div>';
+
+  html += '<div class="section-label">Manual Backup</div>';
+  html += '<div class="card sync-card">';
+  html += '<button class="data-btn" onclick="exportBackup()"><span class="ico">⬇️</span>Export backup<small>Downloads a .json snapshot of every cycle</small></button>';
+  html += '<button class="data-btn" onclick="triggerImport()"><span class="ico">⬆️</span>Import backup<small>Restore from a previously exported .json file</small></button>';
+  html += '</div>';
+
+  html += '<div class="note-box">Local File Sync keeps a JSON file on your device updated every time you log or review a chapter — useful for moving data between devices, or backing it up outside the app\'s storage. If this dashboard is later wrapped as an APK, file linking may not be available inside the app\'s WebView — Export/Import will still work everywhere.</div>';
+
+  el.innerHTML = html;
+}
+
+/* ---------------- Utils ---------------- */
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s){
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+/* ---------------- Master render ---------------- */
+function renderAll(){
+  renderStats();
+  renderToday();
+  renderAdd();
+  renderLog();
+  if(document.getElementById('view-calendar').classList.contains('active')) renderCalendar();
+  renderData();
+}
+
+renderAll();
+tryRestoreSyncHandle();
+</script>
+</body>
+</html>
